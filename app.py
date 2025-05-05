@@ -1,21 +1,26 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import requests
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend requests
 
-API_KEY = "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"
+# WARNING: Hardcoding API keys is not secure. This is for testing only.
+API_KEY = "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"
 
 SYSTEM_MESSAGE = {
     "role": "system",
-    "content": """You are HSG AI, a helpful, intelligent, and conversational virtual assistant. 
+    "content": """You are HSG AI, a helpful, intelligent, and conversational virtual assistant.
 You are designed to answer questions, provide explanations, assist with tasks, and hold meaningful conversations.
 Avoid mentioning that you are powered by OpenRouter or any backend technologies.
 Stay professional, friendly, and helpful at all times.
 If a question is unclear, politely ask for more information.
 Always respond as HSG AI."""
 }
+
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -28,33 +33,36 @@ def chat():
 
     messages = [SYSTEM_MESSAGE] + history + [{"role": "user", "content": user_message}]
 
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": "openai/gpt-3.5-turbo",
+        "messages": messages,
+        "temperature": 0.7,
+        "max_tokens": 1000
+    }
+
     try:
         response = requests.post(
             "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {API_KEY}",
-                "HTTP-Referer": "http://localhost:5000",  # Change this if hosted elsewhere
-                "X-Title": "HSG AI Assistant",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "openai/gpt-3.5-turbo",
-                "messages": messages,
-                "temperature": 0.7,
-                "max_tokens": 1000
-            }
+            headers=headers,
+            json=payload
         )
-
-        print(response.status_code)
-        print(response.text)
 
         response.raise_for_status()
         ai_reply = response.json()["choices"][0]["message"]["content"]
         return jsonify({"reply": ai_reply})
 
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred: {http_err}")
+        return jsonify({"reply": "Authorization failed. Please check your API key."}), 401
+
     except Exception as e:
         print("Error:", str(e))
-        return jsonify({"reply": "Something went wrong. Please try again later."})
+        return jsonify({"reply": "Something went wrong. Please try again later."}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
