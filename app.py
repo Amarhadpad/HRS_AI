@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend requests
 
 # WARNING: Hardcoding API keys is not secure. This is for testing only.
-API_KEY = os.getenv('API_KEY', "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")
+API_KEY = os.getenv('API_KEY', "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")
 
 SYSTEM_MESSAGE = {
     "role": "system",
