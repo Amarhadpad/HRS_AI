@@ -1,12 +1,13 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import requests
+import os
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend requests
 
 # WARNING: Hardcoding API keys is not secure. This is for testing only.
-API_KEY = "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"
+API_KEY = os.getenv('API_KEY', "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")
 
 SYSTEM_MESSAGE = {
     "role": "system",
@@ -65,4 +66,5 @@ def chat():
         return jsonify({"reply": "Something went wrong. Please try again later."}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.getenv('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
